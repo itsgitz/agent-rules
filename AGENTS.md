@@ -17,7 +17,7 @@ Apply alongside repository instructions and the user's current request.
 - `subagent_model` (Pi, Codex, other harnesses): `opencode-go/muse-spark-1.3-contributor`
 - `subagent_model` (Claude Code): latest available Claude Haiku, resolved from the harness
 - `subagent_effort`: `medium`
-- The configured subagent model is a suggestion; confirm the model and parallelism with the user before each task's first delegation (see Harness and delegation).
+- The configured subagent model is the default; confirm it once at session start before the first delegation, then reuse that session choice (see Harness and delegation).
 - `max_parallel_agents`: 1 (proposals on low-spec machines: at most 2)
 - `max_heavy_jobs`: 1
 
@@ -35,11 +35,12 @@ Apply alongside repository instructions and the user's current request.
 - Check both that `pi list` shows the extension and that the current session offers its `Agent`, `get_subagent_result`, and `steer_subagent` tools; bare tool names alone are insufficient proof because another extension may provide same-named tools.
 - If the extension is absent, disabled, or unavailable, stop before repo work and ask the user to install/enable it (`pi install npm:@tintinweb/pi-subagents`, `pi config` if needed) and reload/restart; do not fall back to main-agent repo work or a silent substitute.
 - If delegation or the required model or effort is unavailable, stop before repo work, explain what is missing, and ask the user to enable it or authorize an alternative. Do not invent tool names, flags, model IDs, or successful delegation.
-- Before the first delegation for each task, ask the user both mandatory approval questions and wait for both answers: "Which model should we use for subagents?" (list the configured model as a suggestion, not consent) and "Will you run subagents in parallel?" (a yes/no permission choice). If parallelism is proposed, state the independent tasks, agent count, and expected load; a yes does not raise `max_parallel_agents` or `max_heavy_jobs`.
+- Once at session start before the first delegation, ask which subagent model to use, offering the configured `subagent_model` as the default; accept the user's explicit choice or use the configured default when the user offers no alternative, retain that session choice until the user explicitly selects another, and never silently substitute an unavailable or pricier model. Do not re-ask each task, time out, or invent a response.
+- Before the first delegation for each task, ask "Will you run subagents in parallel?" and wait for the yes/no answer. If parallelism is proposed, state the independent tasks, agent count, and expected load; a yes does not raise `max_parallel_agents` or `max_heavy_jobs`.
 
 ## Change control
 
-- Use the user's approved subagent model for the task; pass `medium` effort explicitly unless the user approves another effort. Do not rely on inherited defaults or silent fallback.
+- Use the session-selected (or default-accepted) subagent model; pass `medium` effort explicitly unless the user approves another effort. Do not rely on inherited defaults or silent fallback.
 - Ask the user before: changing model or effort (including after failures), substituting an unavailable model, running parallel agents, or running concurrent heavy jobs. Approval covers only the agreed task and limits.
 - If the model does not support `medium`, say so and ask for a supported setting. Do not invent a mapping.
 - Never silently fall back to the main model, a pricier model, or another provider. Do not claim a model is cheapest without verified pricing.
@@ -99,6 +100,7 @@ When all tasks are finished and the user is satisfied, remind them that this ses
 4. Wait for explicit approval. The user may approve all, a subset, or none. Anything not approved stays.
 5. Delegate approved cleanup to a subagent, run sequentially, touching only the approved rows. Report what was removed and what remains.
 6. If something unlisted turns out to need cleanup, add it to a new table and ask again.
+7. After verified cleanup, confirm it is safe to close the current session only if no unfinished work, running session processes, unsaved changes, or other blockers remain; otherwise explain them instead, and accurately note intentionally retained work without portraying it as lost or saved.
 
 ## Sensitive actions
 
