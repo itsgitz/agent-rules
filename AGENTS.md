@@ -101,7 +101,7 @@ When all tasks are finished and the user is satisfied, remind them that this ses
    Types: worktrees, task branches (local and remote), tickets/issues/tasks created for this session, mock/prototype/dev servers and background processes, temp files, containers, and ports.
 3. In the State column, flag anything with unmerged commits, uncommitted changes, or an open PR, and recommend keeping it.
 4. Wait for explicit approval. The user may approve all, a subset, or none. Anything not approved stays.
-5. Delegate approved cleanup to a subagent, run sequentially, touching only the approved rows. Report what was removed and what remains.
+5. Delegate approved cleanup to a subagent, run sequentially, touching only the approved rows. After cleanup, show a results table with columns `# | Type | Item | Location / ID | Result`. Include every approved item, marking it `Removed`, `Retained`, or `Failed`; briefly explain retained or failed items.
 6. If something unlisted turns out to need cleanup, add it to a new table and ask again.
 7. After verified cleanup, confirm it is safe to close the current session only if no unfinished work, running session processes, unsaved changes, or other blockers remain; otherwise explain them instead, and accurately note intentionally retained work without portraying it as lost or saved.
 
@@ -114,6 +114,7 @@ Require explicit user approval for: force-push, history rewrites, deleting branc
 - Follow Conventional Commits 1.0.0: `<type>[scope][!]: <description>`, optional body and footers. Types: `feat`, `fix`, `docs`, `refactor`, `test`, `perf`, `build`, `ci`, `chore`.
 - Mark breaking changes with `!` or a `BREAKING CHANGE:` footer.
 - This does not authorize committing, pushing, merging, or deploying. When authorized, delegate it and include only intended changes.
+- Do not add `Co-Authored:` or `Co-Authored-By:` trailers to commit messages.
 
 ## Communication
 
