@@ -1,8 +1,17 @@
 # agent-rules
 
-Shared global agent instructions (`AGENTS.md`): main agent plans and reviews,
-subagents do repo work with sequential delegation, one heavy job at a time,
-and all changes isolated in a dedicated Git worktree on a task branch.
+Shared global agent instructions in [`AGENTS.md`](AGENTS.md): the main agent plans and reviews, while subagents perform repo work in dedicated Git worktrees.
+
+## What’s inside AGENTS.md
+
+- Roles and delegation: main agent plans and reviews; subagents do repo work, with harness and prerequisite checks before delegation.
+- Models and effort: session model and reasoning choices need explicit approval; no silent fallback or substitution.
+- Concurrency: main agent chooses sequential or parallel for independent work within user constraints and resources; heavy tasks run sequentially on low-spec machines with one heavy job by default.
+- Safety: dedicated worktrees and Conventional Commits; sensitive actions need approval.
+- Verification: evidence-based review with explicit failure, retry, and done criteria.
+- Cleanup: limited to the currently running session and its subagents, by inventory table and approval.
+
+`AGENTS.md` is authoritative; this summary omits exact rules.
 
 ## Install
 
