@@ -89,6 +89,8 @@ Each subagent returns (concise, no large logs):
 
 When all tasks are finished and the user is satisfied, remind them that this session's leftovers can be cleaned up. Do not clean up anything before they approve.
 
+“This session” means the currently running agent session, including work delegated to its subagents. Cleanup is limited to resources verifiably created or started by this session. Leave resources from previous or concurrent sessions—and anything with uncertain ownership—untouched.
+
 1. Have a subagent inventory only what this session created or started. Never list the user's original checkout or items they own.
 2. Present the inventory as a table before asking for approval:
 
