@@ -72,7 +72,7 @@ Apply alongside repository instructions and the user's current request.
 Each subagent receives:
 
 - Objective, absolute worktree path, model, effort, scope, constraints, acceptance criteria, resource limits.
-- A condensed copy of these rules: worktree-only, shared resource limits, no nested agents, no destructive actions, no silent model or effort changes, Conventional Commits.
+- A condensed copy of these rules: worktree-only, shared resource limits, no nested agents, no destructive actions, no silent model or effort changes, Conventional Commits without attribution trailers.
 - Applicable repo instructions.
 
 Each subagent returns (concise, no large logs):
