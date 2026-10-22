@@ -5,7 +5,7 @@ Apply alongside repository instructions and the user's current request.
 ## TL;DR
 
 - Main agent plans, advises, and reviews. Subagents do all repo work.
-- Main agent chooses sequential or parallel subagents to fit the task and available resources; one heavy job at a time.
+- Ask once at session start whether to run subagents in parallel; reuse that answer for the whole session. One heavy job at a time.
 - Always work in a dedicated Git worktree on a task branch.
 - Ask before changing model, reasoning effort, or the heavy-job limit.
 - Never claim a check passed without reported evidence.
@@ -18,7 +18,7 @@ Apply alongside repository instructions and the user's current request.
 - `subagent_model` (Claude Code): latest available Claude Haiku, resolved from the harness
 - `subagent_effort`: `medium`
 - The configured subagent model is the default; confirm it once at session start before the first delegation, then reuse that session choice (see Harness and delegation).
-- `max_parallel_agents`: chosen by the main agent for independent work, within available resources and user constraints; use one if capacity is unknown.
+- `max_parallel_agents`: when the session answer is yes, chosen by the main agent for independent work within available resources and user constraints; 1 when the answer is no or capacity is unknown.
 - `max_heavy_jobs`: 1
 
 ## Roles
@@ -36,7 +36,7 @@ Apply alongside repository instructions and the user's current request.
 - If the extension is absent, disabled, or unavailable, stop before repo work and ask the user to install/enable it (`pi install npm:@tintinweb/pi-subagents`, `pi config` if needed) and reload/restart; do not fall back to main-agent repo work or a silent substitute.
 - If delegation or the required model or effort is unavailable, stop before repo work, explain what is missing, and ask the user to enable it or authorize an alternative. Do not invent tool names, flags, model IDs, or successful delegation.
 - Once at session start before the first delegation, ask which subagent model to use, offering the configured `subagent_model` as the default; accept the user's explicit choice or use the configured default when the user offers no alternative, retain that session choice until the user explicitly selects another, and never silently substitute an unavailable or pricier model. Do not re-ask each task, time out, or invent a response.
-- The main agent decides whether subagents run sequentially or in parallel; no routine user approval is needed. When choosing parallelism, state the independent tasks, agent count, and expected load before launching.
+- Once at session start, before the first delegation, ask "Will you run subagents in parallel?" and wait for the yes/no answer. Reuse that answer for every task in the session: do not re-ask per task, after a task finishes, or when a new task starts. Switch modes mid-session only when the user asks. When running in parallel, state the independent tasks, agent count, and expected load before launching.
 
 ## Change control
 
@@ -48,7 +48,7 @@ Apply alongside repository instructions and the user's current request.
 
 ## Resource limits
 
-- Parallelize independent work when resources allow; use sequential delegation for dependent work or when the user requests it. If capacity is unknown, start with one agent.
+- When the session answer allows parallelism, parallelize independent work if resources allow; use sequential delegation for dependent work, when resources are tight, or when the session answer is no. If capacity is unknown, start with one agent.
 - If the user reports a low-spec machine, run heavy tasks sequentially, including heavy jobs started by different subagents. Lightweight independent work may still run in parallel within the user's limits.
 - Subagents must not spawn nested agents or detached background work without main-agent coordination and user approval.
 - Across all subagents, run no more than `max_heavy_jobs` builds, test suites, installs, bundlers, or browser tests at once. Limit internal workers (prefer one on constrained hardware). Run focused checks before full suites; avoid watch mode and dev servers.
