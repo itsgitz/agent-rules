@@ -14,10 +14,9 @@ Apply alongside repository instructions and the user's current request.
 ## Config (edit here when values change)
 
 - `main_model`: GPT 6.1 Sol, medium reasoning (openai-codex)
-- `subagent_model` (Pi, Codex, other harnesses): `opencode-go/muse-spark-1.3-contributor`
-- `subagent_model` (Claude Code): latest available Claude Haiku, resolved from the harness
-- `subagent_effort`: `medium`
-- The configured subagent model is the default; confirm it once at session start before the first delegation, then reuse that session choice (see Harness and delegation).
+- `subagent_model`: `opencode-go/deepseek-v4.1-flash`
+- `subagent_effort`: `low`
+- The configured subagent model and effort are the defaults wherever the harness supports them; confirm the model once at session start before the first delegation, then reuse that session choice (see Harness and delegation).
 - `max_parallel_agents`: when the session answer is yes, chosen by the main agent for independent work within available resources and user constraints; 1 when the answer is no or capacity is unknown.
 - `max_heavy_jobs`: 1
 
@@ -29,20 +28,21 @@ Apply alongside repository instructions and the user's current request.
 
 ## Harness and delegation
 
-- Identify the harness from runtime information, not from the model provider.
-- Confirm the delegation tool supports explicit model and effort selection, and that the child agent can access the configured model.
-- When the harness is Pi, before any repo work or delegation verify the subagents extension is installed and loaded: Pi has no built-in subagents and delegation requires https://github.com/tintinweb/pi-subagents (`npm:@tintinweb/pi-subagents`; documented git/local installs of the same extension also count).
-- Check both that `pi list` shows the extension and that the current session offers its `Agent`, `get_subagent_result`, and `steer_subagent` tools; bare tool names alone are insufficient proof because another extension may provide same-named tools.
-- If the extension is absent, disabled, or unavailable, stop before repo work and ask the user to install/enable it (`pi install npm:@tintinweb/pi-subagents`, `pi config` if needed) and reload/restart; do not fall back to main-agent repo work or a silent substitute.
+- Identify the host harness from runtime information, not from the model provider.
+- Always delegate through the host harness's own subagents: the T3 orchestrator in T3 (even when its backend is Pi), native subagents in Claude Code, and https://github.com/tintinweb/pi-subagents (`npm:@tintinweb/pi-subagents`; documented git/local installs of the same extension also count) in standalone Pi.
+- Confirm the delegation tool supports explicit model and effort selection, and that the child agent can access the configured model and effort. If it cannot, stop before repo work and ask the user to enable it or authorize an alternative; never substitute another tool, model, or effort silently.
+- Standalone Pi has no built-in subagents. Only there, before any repo work or delegation, verify the subagents extension is installed and loaded.
+- Only in standalone Pi, check both that `pi list` shows the extension and that the current session offers its `Agent`, `get_subagent_result`, and `steer_subagent` tools; bare tool names alone are insufficient proof because another extension may provide same-named tools.
+- If the extension is absent, disabled, or unavailable in standalone Pi, stop before repo work and ask the user to install/enable it (`pi install npm:@tintinweb/pi-subagents`, `pi config` if needed) and reload/restart; do not fall back to main-agent repo work or a silent substitute.
 - If delegation or the required model or effort is unavailable, stop before repo work, explain what is missing, and ask the user to enable it or authorize an alternative. Do not invent tool names, flags, model IDs, or successful delegation.
 - Once at session start before the first delegation, ask which subagent model to use, offering the configured `subagent_model` as the default; accept the user's explicit choice or use the configured default when the user offers no alternative, retain that session choice until the user explicitly selects another, and never silently substitute an unavailable or pricier model. Do not re-ask each task, time out, or invent a response.
 - Once at session start, before the first delegation, ask "Will you run subagents in parallel?" and wait for the yes/no answer. Reuse that answer for every task in the session: do not re-ask per task, after a task finishes, or when a new task starts. Switch modes mid-session only when the user asks. When running in parallel, state the independent tasks, agent count, and expected load before launching.
 
 ## Change control
 
-- Use the session-selected (or default-accepted) subagent model; pass `medium` effort explicitly unless the user approves another effort. Do not rely on inherited defaults or silent fallback.
+- Use the session-selected (or default-accepted) subagent model; pass the configured `subagent_effort` explicitly unless the user approves another effort. Do not rely on inherited defaults or silent fallback.
 - Ask the user before: changing model or effort (including after failures), substituting an unavailable model, or increasing `max_heavy_jobs`. Approval covers only the agreed task and limits.
-- If the model does not support `medium`, say so and ask for a supported setting. Do not invent a mapping.
+- If the model does not support the configured effort, say so and ask for a supported setting. Do not invent a mapping.
 - Never silently fall back to the main model, a pricier model, or another provider. Do not claim a model is cheapest without verified pricing.
 - The main model and its reasoning setting never change silently.
 
@@ -61,11 +61,11 @@ Apply alongside repository instructions and the user's current request.
 - The first subagent runs the minimal Git checks (status, existing worktrees, base revision, repo instructions), then creates or validates the task worktree. Reuse a suitable existing one.
 - Branch naming: `<type>/<short-slug>` (for example `feat/free-registrations`).
 - Base the branch on the intended revision. Ask if uncommitted changes are needed.
-- Use `.worktrees/` inside the project root unless the user specifies a different directory. Pass the absolute path to every subagent and run all commands there.
+- Use `.worktrees/` inside the project root unless the user or host harness specifies another directory, including paths outside the project such as harness-managed worktree roots. The actual absolute path the harness reports is authoritative: pass it to every subagent and run all commands there.
 - Never reset, clean, stash, or discard the user's original checkout or uncommitted changes.
 - One agent per worktree. Parallel editing agents each get their own worktree and branch; integration is done sequentially by one designated subagent.
 - Non-Git project: explain and ask how to proceed. Do not initialize Git silently.
-- Report the final branch and worktree path. Remove worktrees or branches only when authorized.
+- Report the final branch and the actual absolute worktree path. Remove worktrees or branches only when authorized.
 
 ## Delegation brief
 
@@ -88,18 +88,18 @@ Each subagent returns (concise, no large logs):
 
 ## Session cleanup
 
-When all tasks are finished and the user is satisfied, remind them that this session's leftovers can be cleaned up. Do not clean up anything before they approve.
+When all tasks are finished and the user is satisfied, remind them that this session's leftovers can be cleaned up. Do not clean up anything before they approve. When the user approves ending the session, clean up this session's worktrees—inside or outside the project—and other leftovers unless the user explicitly retains them.
 
 “This session” means the currently running agent session, including work delegated to its subagents. Cleanup is limited to resources verifiably created or started by this session. Leave resources from previous or concurrent sessions—and anything with uncertain ownership—untouched.
 
-1. Have a subagent inventory only what this session created or started. Never list the user's original checkout or items they own.
+1. Have a subagent inventory only what this session created or started, including every worktree it created whether inside the project or at an external or harness-managed path. Never list the user's original checkout or items they own.
 2. Present the inventory as a table before asking for approval:
 
    | # | Type | Item | Location / ID | State | Proposed action |
    |---|------|------|---------------|-------|-----------------|
 
    Types: worktrees, task branches (local and remote), tickets/issues/tasks created for this session, mock/prototype/dev servers and background processes, temp files, containers, and ports.
-3. In the State column, flag anything with unmerged commits, uncommitted changes, or an open PR, and recommend keeping it.
+3. In the State column, flag anything with unmerged commits, uncommitted changes, or an open PR, and recommend keeping it. Never delete such work silently or discard it: the user may explicitly approve removal after seeing that state, or explicitly retain any item.
 4. Wait for explicit approval. The user may approve all, a subset, or none. Anything not approved stays.
 5. Delegate approved cleanup to a subagent, run sequentially, touching only the approved rows. After cleanup, show a results table with columns `# | Type | Item | Location / ID | Result`. Include every approved item, marking it `Removed`, `Retained`, or `Failed`; briefly explain retained or failed items.
 6. If something unlisted turns out to need cleanup, add it to a new table and ask again.
